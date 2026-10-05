@@ -13,24 +13,28 @@ interface Props {
   today: string;
   /** Names of the other employees, to hint at a duplicate. */
   otherNames?: string[];
+  /** Enrollment numbers of the other employees, to catch a repeat before saving. */
+  otherEnrollmentNos?: string[];
   onClose: () => void;
   onError: (message: string) => void;
 }
 
-export function EmployeeSheet({ employee, today, otherNames = [], onClose, onError }: Props) {
+export function EmployeeSheet({ employee, today, otherNames = [], otherEnrollmentNos = [], onClose, onError }: Props) {
   const save = useSaveEmployee();
   const del = useDeleteEmployee();
   const isNew = employee === null;
 
   const initialDays = isNew ? [0] : editableOffDays(employee);
   const [name, setName] = useState(employee?.name ?? "");
+  const [enrollment, setEnrollment] = useState(employee?.enrollmentNo ?? "");
   const [days, setDays] = useState<number[]>(initialDays);
   const [countedFrom, setCountedFrom] = useState(employee?.countedFrom ?? today);
   const [lastDay, setLastDay] = useState(employee?.lastWorkingDate ?? "");
   const [offFrom, setOffFrom] = useState(today > (employee?.countedFrom ?? today) ? today : (employee?.countedFrom ?? today));
 
   const daysChanged = !isNew && [...days].sort().join() !== [...initialDays].sort().join();
-  const valid = name.trim().length > 0 && countedFrom !== "" && (lastDay === "" || lastDay >= countedFrom);
+  const enrollmentTaken = enrollment.trim() !== "" && otherEnrollmentNos.some((n) => n.trim().toLowerCase() === enrollment.trim().toLowerCase());
+  const valid = name.trim().length > 0 && !enrollmentTaken && countedFrom !== "" && (lastDay === "" || lastDay >= countedFrom);
   const busy = save.isPending || del.isPending;
   const duplicate = name.trim() !== "" && otherNames.some((n) => n.trim().toLowerCase() === name.trim().toLowerCase());
 
@@ -41,6 +45,7 @@ export function EmployeeSheet({ employee, today, otherNames = [], onClose, onErr
       await save.mutateAsync({
         id: employee?.id ?? null,
         name: name.trim(),
+        ...(enrollment.trim() ? { enrollmentNo: enrollment.trim() } : {}),
         countedFrom,
         lastWorkingDate: overrideLast === undefined ? (lastDay === "" ? null : lastDay) : overrideLast,
         weekdays: days,
@@ -80,6 +85,25 @@ export function EmployeeSheet({ employee, today, otherNames = [], onClose, onErr
 
       {duplicate && (
         <p className="mt-1.5 text-[13px] text-brick">Another employee already has this name. You can still save, but you may want to tell them apart (for example Raju K.).</p>
+      )}
+
+      <label htmlFor="emp-enrollment" className="mt-5 block text-sm font-medium">
+        Enrollment number <span className="font-normal text-ink/60">(optional)</span>
+      </label>
+      <input
+        id="emp-enrollment"
+        value={enrollment}
+        onChange={(e) => setEnrollment(e.target.value)}
+        maxLength={30}
+        autoComplete="off"
+        autoCapitalize="characters"
+        spellCheck={false}
+        aria-invalid={enrollmentTaken ? true : undefined}
+        aria-describedby={enrollmentTaken ? "emp-enrollment-err" : undefined}
+        className="mt-1.5 h-14 w-full rounded-[10px] border border-deep-olive bg-linen px-4 text-[20px] outline-none focus:border-ink focus:ring-2 focus:ring-chartreuse"
+      />
+      {enrollmentTaken && (
+        <p id="emp-enrollment-err" role="alert" className="mt-1.5 text-[13px] text-brick">Another employee already has this enrollment number.</p>
       )}
 
       <fieldset className="mt-5">

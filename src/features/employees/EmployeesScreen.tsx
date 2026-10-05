@@ -61,7 +61,7 @@ export function EmployeesScreen() {
                 <span className="min-w-0">
                   <span className="block truncate text-[17px] font-medium">{e.name}</span>
                   <span className="block truncate text-[13px] text-ink/60">
-                    {describeOffs(e, today)} · counted from {fmt(e.countedFrom)}
+                    {e.enrollmentNo ? `No. ${e.enrollmentNo} · ` : ""}{describeOffs(e, today)} · counted from {fmt(e.countedFrom)}
                     {e.lastWorkingDate ? ` · last day ${fmt(e.lastWorkingDate)}` : ""}
                   </span>
                 </span>
@@ -95,6 +95,7 @@ export function EmployeesScreen() {
             employee={editing === "new" ? null : editing}
             today={today}
             otherNames={(q.data ?? []).filter((e) => editing === "new" || e.id !== editing.id).map((e) => e.name)}
+            otherEnrollmentNos={(q.data ?? []).filter((e) => (editing === "new" || e.id !== editing.id) && e.enrollmentNo).map((e) => e.enrollmentNo as string)}
             onClose={() => setEditing(null)}
             onError={flash.flash}
           />

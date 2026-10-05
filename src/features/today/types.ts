@@ -14,6 +14,8 @@ export interface Employee {
   /** First date the app scores this employee. */
   countedFrom: DateKey;
   lastWorkingDate: DateKey | null;
+  /** Typed in by hand for now (a biometric device may fill it later). */
+  enrollmentNo?: string | null;
   weeklyOffs: WeeklyOff[];
 }
 

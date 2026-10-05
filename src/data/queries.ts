@@ -67,6 +67,7 @@ export function useEmployees() {
         name: r.name,
         countedFrom: r.counted_from,
         lastWorkingDate: r.last_working_date,
+        enrollmentNo: r.enrollment_no ?? null,
         weeklyOffs: offs
           .filter((o) => o.employee_id === r.id)
           .map((o) => ({ weekday: o.weekday, from: o.from_date, to: o.to_date })),
@@ -80,6 +81,7 @@ export interface EmployeeInput {
   name: string;
   countedFrom: DateKey;
   lastWorkingDate: DateKey | null;
+  enrollmentNo?: string | null;
   weekdays: number[];
   /** Date the new weekly off takes effect (edits only). */
   weeklyOffFrom: DateKey;
@@ -96,6 +98,7 @@ export function useSaveEmployee() {
         p_last_working: v.lastWorkingDate,
         p_weekdays: v.weekdays,
         p_from: v.weeklyOffFrom,
+        p_enrollment: v.enrollmentNo?.trim() || null,
       } as never);
       return must(res) as unknown as string;
     },

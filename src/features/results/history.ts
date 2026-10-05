@@ -64,7 +64,7 @@ export const POINT_LABEL: Record<string, string> = {
 };
 
 const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const EMPLOYEE_FIELD: Record<string, string> = { counted_from: "counted from", last_working_date: "last working day" };
+const EMPLOYEE_FIELD: Record<string, string> = { counted_from: "counted from", last_working_date: "last working day", enrollment_no: "enrollment number" };
 
 /** "5 Oct 2026" for a stored yyyy-mm-dd value; anything else is returned as is. */
 function shortDate(v: string | null): string {

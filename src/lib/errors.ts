@@ -14,5 +14,6 @@ export function friendlyError(message: string): string {
   if (/permission denied|row-level security|violates row-level/.test(m)) {
     return "You don’t have access to do that. If your access was removed, ask an Admin to approve your email again.";
   }
+  if (/employees_enrollment_no_key/.test(m)) return "Another employee already has that enrollment number.";
   return message;
 }

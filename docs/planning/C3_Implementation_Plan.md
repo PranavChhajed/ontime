@@ -239,6 +239,8 @@ and the explanation screen for a score.
 | Deploy to Vercel | Approved by the owner, but the Vercel connection cannot create projects (403). Owner runs 5 commands from `Go_Live_Guide.md` section 1. Production build passes (`next build`) |
 | Trial month beside Excel | Owner |
 
+Employee enrollment number (owner request, after Checkpoint 4): optional text field on each employee, typed by hand for now (a biometric device may fill it later). Unique when given; shown in the Employees list, edit sheet and History. Migration 10. Nothing else changed.
+
 Known limitation: the welcome tour's example numbers (6 / 4.5 / 2 / 0) are the documented defaults and do not follow edited point values.
 
 ### Checkpoint 2 progress
