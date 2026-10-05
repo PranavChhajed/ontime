@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/*
+ * Tokens from docs/guidelines/DESIGN.md, adapted for a phone tool.
+ * Derived tints (clay, brick) stay in the warm family; no cool colours.
+ */
+@theme {
+  --color-cream: #faf5f1;
+  --color-linen: #fefffa;
+  --color-ink: #0e0f0a;
+  --color-sand: #e5e1d6;
+  --color-olive: #3d4128;
+  --color-deep-olive: #24280f;
+  --color-chartreuse: #e1f079;
+  --color-terracotta: #de7653;
+  --color-coral: #e7573d;
+  --color-clay: #f3d2c3;
+  --color-brick: #8f3b27;
+
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --radius-card: 24px;
+  --radius-row: 18px;
+  --radius-control: 10px;
+
+  --animate-drift: drift 22s ease-in-out infinite alternate;
+  --animate-drift-slow: drift 30s ease-in-out infinite alternate-reverse;
+  --animate-pop: pop 360ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  --animate-rise: rise 280ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+
+  @keyframes drift {
+    from {
+      transform: translate3d(-6%, -4%, 0) scale(1);
+    }
+    to {
+      transform: translate3d(8%, 6%, 0) scale(1.12);
+    }
+  }
+  @keyframes pop {
+    from {
+      transform: scale(0.7);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes rise {
+    from {
+      transform: translate3d(0, 14px, 0);
+      opacity: 0;
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background: var(--color-cream);
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.008em;
+  overscroll-behavior-y: none;
+}
+
+/* Visible keyboard focus, in the brand's own colour. */
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
