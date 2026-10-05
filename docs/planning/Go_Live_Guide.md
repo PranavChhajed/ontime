@@ -3,26 +3,16 @@
 Steps to put OnTime on a real address, and to run the trial month beside the Excel sheet.
 Written for the owner; nothing here needs coding.
 
-## 1. Deploy (about 5 minutes, you run it once)
+## 1. Deployed
 
-The Vercel connection I have can read your account but is not allowed to create projects, so the
-deploy is run from your own terminal, in the `OnTime` folder:
-
-```bash
-npx vercel login
-npx vercel link --yes --project ontime
-npx vercel env add NEXT_PUBLIC_SUPABASE_URL production
-npx vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY production
-npx vercel deploy --prod
-```
-
-- The two values to paste are the two lines in `.env.local` (both are safe in a browser).
-- `vercel deploy --prod` prints the live address, like `https://ontime-xxxx.vercel.app`.
-- **You do this one** (Supabase dashboard, project `ontime`): Authentication → URL Configuration.
-  - Site URL: the live address.
-  - Redirect URLs: add `https://<live address>/**`.
-  Without this, the confirmation and password-reset emails send people to the wrong place.
-- Open the live address on a phone, sign in, and add it to the home screen.
+- Live address: **https://ontime-rose.vercel.app** (Vercel project `ontime`, region Mumbai).
+- Code: https://github.com/PranavChhajed/ontime (private). Redeploy after a change: `npx vercel deploy --prod`.
+- Vercel holds `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (both safe in a browser).
+- **Owner step (Supabase dashboard, project `ontime`): Authentication → URL Configuration.**
+  - Site URL: `https://ontime-rose.vercel.app`
+  - Redirect URLs: add `https://ontime-rose.vercel.app/**`
+  Without this, confirmation and password-reset emails point to the wrong place.
+- Open the address on a phone, sign in, and add it to the home screen.
 
 ## 2. Settings only you can change (Supabase dashboard)
 

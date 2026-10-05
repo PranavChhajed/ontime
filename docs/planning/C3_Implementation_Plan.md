@@ -217,7 +217,7 @@ and the explanation screen for a score.
 | Point values screen with history | A change alters open months only; closed months unchanged |
 | Approved emails screen, history screen, onboarding replay | Removing an email ends that person's access at once |
 | Phone and PC polish, empty and error states | Checks in C3.7 pass |
-| Deploy to Vercel | The live address works on a phone |
+| Deploy to Vercel | **Done**: https://ontime-rose.vercel.app (Ready; signed-out visitors go to sign-in; no console errors; bundle points at the Supabase project). Owner still sets the Supabase Site URL / Redirect URL |
 | Trial month beside Excel | Differences explained (pooled vs weekly average, C1.2.1) |
 
 **Owner reviews:** the live app, then decides when the Excel sheet stops.

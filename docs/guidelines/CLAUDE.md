@@ -7,8 +7,9 @@ traceable to each day.
 
 **Status:** Checkpoints 1-3 are complete, verified and audited (see the QA report).
 Checkpoint 4 is built and tested locally: Point values, Admin access, History,
-Go-live guide. Not yet done: deploy to Vercel (needs the owner's approval), the
-trial month beside Excel (owner). See `planning/C3_Implementation_Plan.md` C3.6 and
+Go-live guide. Deployed at https://ontime-rose.vercel.app (code: private repo
+PranavChhajed/ontime). Not yet done: Supabase Site URL / Redirect URL (owner),
+the trial month beside Excel (owner). See `planning/C3_Implementation_Plan.md` C3.6 and
 `planning/Go_Live_Guide.md`.
 
 **Commands:** `npm run dev` (http://localhost:3000) · `npm test` (scoring

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # company spreadsheets (reference only, may hold salary data)
 *.xlsx
+
+.vercel
+.env*
