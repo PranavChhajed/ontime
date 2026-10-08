@@ -3,6 +3,7 @@
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Avatar } from "@/components/Avatar";
 import { FlashToast, useFlash } from "@/components/Flash";
 import { useClock, useEmployees } from "@/data/queries";
 import { formatDate } from "@/lib/dates";
@@ -58,7 +59,8 @@ export function EmployeesScreen() {
           {current.map((e) => (
             <li key={e.id}>
               <button type="button" onClick={() => setEditing(e)} className="flex w-full items-center justify-between gap-3 rounded-[18px] bg-linen px-4 py-3.5 text-left ring-1 ring-ink/10 active:bg-sand/60">
-                <span className="min-w-0">
+                <Avatar name={e.name} src={e.photoUrl} />
+                <span className="min-w-0 flex-1">
                   <span className="block truncate text-[17px] font-medium">{e.name}</span>
                   <span className="block truncate text-[13px] text-ink/60">
                     {e.enrollmentNo ? `No. ${e.enrollmentNo} · ` : ""}{describeOffs(e, today)} · counted from {fmt(e.countedFrom)}
@@ -79,7 +81,10 @@ export function EmployeesScreen() {
             {past.map((e) => (
               <li key={e.id}>
                 <button type="button" onClick={() => setEditing(e)} className="flex w-full items-center justify-between rounded-[18px] bg-sand/45 px-4 py-3 text-left text-ink/70">
-                  <span className="truncate">{e.name}</span>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Avatar name={e.name} src={e.photoUrl} className="size-9 text-[13px] opacity-60" />
+                    <span className="truncate">{e.name}</span>
+                  </span>
                   <span className="shrink-0 text-[13px]">until {fmt(e.lastWorkingDate!)}</span>
                 </button>
               </li>

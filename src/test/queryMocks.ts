@@ -35,6 +35,9 @@ export const state = {
   approved: [] as ApprovedPerson[],
   savePointValues: vi.fn<(v: unknown) => Promise<void>>(async () => {}),
   addEmail: vi.fn<(e: string) => Promise<void>>(async () => {}),
+  /** What a fresh read of today's records returns (another device may have logged someone meanwhile). */
+  freshRecords: null as Record<string, DayRecord> | null,
+  setPhoto: vi.fn<(v: unknown) => Promise<void>>(async () => {}),
   removeEmail: vi.fn<(e: string) => Promise<void>>(async () => {}),
 };
 
@@ -49,10 +52,11 @@ export const queryMocks = {
   useClock: () => ({ ready: true, now: () => state.clock, usingServerTime: state.usingServerTime }),
   useEmployees: () => query(state.employees),
   usePointValues: () => query(state.values),
-  useDayRecords: () => query(state.records),
+  useDayRecords: () => ({ ...query(state.records), refetch: async () => (state.freshRecords ? { data: state.freshRecords } : undefined) }),
   useMonthCalendar: () => query({ holidays: state.holidays, overrides: state.overrides }),
   useSaveRecord: () => ({ mutateAsync: state.saveRecord, isPending: false }),
   useSaveEmployee: () => ({ mutateAsync: state.saveEmployee, isPending: false }),
+  useSetEmployeePhoto: () => ({ mutateAsync: state.setPhoto, isPending: false }),
   useDeleteEmployee: () => ({ mutateAsync: state.deleteEmployee, isPending: false }),
   useToggleHoliday: () => ({ mutateAsync: state.toggleHoliday, isPending: false }),
   useSetOverride: () => ({ mutate: state.setOverride, isPending: false }),
@@ -85,8 +89,9 @@ export function resetState() {
   state.monthState = null;
   state.history = [];
   state.changeLog = [];
+  state.freshRecords = null;
   state.approved = [];
-  [state.closeMonth, state.reopenMonth, state.saveRecordOn, state.saveRecordOnMutate, state.saveRecord, state.saveEmployee, state.deleteEmployee, state.toggleHoliday, state.setOverride, state.savePointValues, state.addEmail, state.removeEmail].forEach((f) => f.mockClear());
+  [state.closeMonth, state.reopenMonth, state.saveRecordOn, state.saveRecordOnMutate, state.saveRecord, state.saveEmployee, state.deleteEmployee, state.toggleHoliday, state.setOverride, state.savePointValues, state.addEmail, state.removeEmail, state.setPhoto].forEach((f) => f.mockClear());
 }
 
 export const emp = (id: string, name: string, over: Partial<Employee> = {}): Employee => ({

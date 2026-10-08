@@ -5,6 +5,7 @@ export interface EmployeeRow {
   counted_from: string;
   last_working_date: string | null;
   enrollment_no?: string | null;
+  photo_path?: string | null;
 }
 export interface WeeklyOffRow {
   id: string;

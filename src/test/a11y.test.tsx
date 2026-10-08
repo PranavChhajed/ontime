@@ -2,7 +2,7 @@
 // Automated accessibility audit of every screen and sheet (axe-core: names, labels, roles, structure).
 // Colour contrast needs real layout, so it is checked separately in the browser.
 import axe from "axe-core";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emp, resetState, state } from "@/test/queryMocks";
@@ -24,6 +24,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { LoginForm } from "@/app/login/LoginForm";
 import { ResetPasswordForm } from "@/app/reset-password/ResetPasswordForm";
 import { AccessScreen } from "@/features/access/AccessScreen";
+import { GateScreen } from "@/features/gate/GateScreen";
+import { endGate, startGate } from "@/features/gate/lock";
 import { HistoryScreen } from "@/features/history/HistoryScreen";
 import { PointsScreen } from "@/features/points/PointsScreen";
 import { EmployeesScreen } from "@/features/employees/EmployeesScreen";
@@ -114,6 +116,39 @@ describe("accessibility", () => {
     access.unmount();
     render(<HistoryScreen />);
     await audit("History");
+  });
+
+  it("Gate mode: setup, grid, confirm card, PIN sheet; Today confirm card; employee sheet with photo", async () => {
+    endGate();
+    const setup = render(<GateScreen />);
+    await audit("Gate setup");
+    setup.unmount();
+
+    await act(async () => startGate("1234"));
+    const grid = render(<GateScreen />);
+    await screen.findByText("Tap your photo");
+    await audit("Gate grid");
+    await userEvent.click(screen.getByRole("button", { name: "Suresh: log arrival" }));
+    await screen.findByRole("dialog");
+    await audit("Gate confirm card");
+    grid.unmount();
+    render(<GateScreen />);
+    await userEvent.click(await screen.findByRole("button", { name: "Admin" }));
+    await audit("Gate PIN sheet");
+    endGate();
+  });
+
+  it("Today: confirm card after Now; Employees: sheet with the photo control", async () => {
+    const today = render(<TodayScreen />);
+    await userEvent.click(screen.getByRole("button", { name: "Mark Suresh arrived now" }));
+    await screen.findByRole("dialog");
+    await audit("Today confirm card");
+    today.unmount();
+    state.employees = [emp("e1", "Raja", { photoPath: "e1/1.jpg", photoUrl: "https://example.com/1.jpg" })];
+    render(<EmployeesScreen />);
+    await userEvent.click(screen.getByText("Raja"));
+    await screen.findByRole("dialog");
+    await audit("Employee sheet with photo");
   });
 
   it("Month: holidays, by employee, holiday sheet", async () => {

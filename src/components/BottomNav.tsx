@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useGateLocked } from "@/features/gate/lock";
 
 const TABS: { href: string; label: string; icon: ReactNode }[] = [
   {
@@ -49,6 +50,8 @@ const TABS: { href: string; label: string; icon: ReactNode }[] = [
 
 export function BottomNav() {
   const path = usePathname();
+  const gateLocked = useGateLocked();
+  if (gateLocked) return null; // Gate mode: nothing to wander into
   return (
     <nav
       aria-label="Main"

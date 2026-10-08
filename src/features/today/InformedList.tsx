@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar } from "@/components/Avatar";
 import { formatClock } from "@/scoring";
 import { KIND_STYLE } from "./category";
 import type { Row } from "./rows";
@@ -32,7 +33,10 @@ export function InformedList({ rows, isToday, isFuture, onInformNow, onEdit }: P
         if (onLeave) {
           return (
             <li key={emp.id} className="flex items-center justify-between rounded-[18px] bg-sand/45 px-4 py-3.5 text-ink/60">
-              <span className="text-base">{emp.name}</span>
+              <span className="flex min-w-0 items-center gap-3">
+                <Avatar name={emp.name} src={emp.photoUrl} className="size-9 text-[13px] opacity-60" />
+                <span className="truncate text-base">{emp.name}</span>
+              </span>
               <span className="text-sm">On leave</span>
             </li>
           );
@@ -53,15 +57,18 @@ export function InformedList({ rows, isToday, isFuture, onInformNow, onEdit }: P
               onClick={() => onEdit(emp.id)}
               className="flex min-w-0 flex-1 items-center gap-3 rounded-[18px] px-4 py-3 text-left active:bg-sand/60"
             >
-              <span
-                aria-hidden
-                className={`grid size-7 shrink-0 place-items-center rounded-full ${informed ? "bg-olive text-cream" : "border border-ink/30"}`}
-              >
-                {informed && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12.5l4.5 4.5L19 7.5" />
-                  </svg>
-                )}
+              <span className="relative shrink-0">
+                <Avatar name={emp.name} src={emp.photoUrl} className="size-12 text-[17px]" />
+                <span
+                  aria-hidden
+                  className={`absolute -right-1 -bottom-1 grid size-6 place-items-center rounded-full ring-2 ring-linen ${informed ? "bg-olive text-cream" : "border border-ink/30 bg-linen"}`}
+                >
+                  {informed && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12.5l4.5 4.5L19 7.5" />
+                    </svg>
+                  )}
+                </span>
               </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[17px] font-medium">{emp.name}</div>

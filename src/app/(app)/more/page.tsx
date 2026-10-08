@@ -6,6 +6,7 @@ export const metadata: Metadata = { title: "More · OnTime" };
 
 const ITEMS = [
   { href: "/more/employees", title: "Employees", note: "Add, edit or remove people, and set weekly offs" },
+  { href: "/gate", title: "Gate mode", note: "A photo grid for a shared phone or tablet at the gate" },
   { href: "/more/points", title: "Point values", note: "What each arrival time and notice earns" },
   { href: "/more/access", title: "Admin access", note: "Who can sign in to OnTime" },
   { href: "/more/history", title: "History", note: "Every change, with who and when" },

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emp, resetState, state } from "@/test/queryMocks";
@@ -19,6 +19,12 @@ import { TodayScreen } from "./TodayScreen";
 
 const row = (name: string) => screen.getByText(name).closest("li") as HTMLElement;
 
+/** Logging an arrival is two taps: Now on the person's row, then Log arrival on the confirm card. */
+async function tapNowThenLog(name: string) {
+  await userEvent.click(screen.getByRole("button", { name: `Mark ${name} arrived now` }));
+  await userEvent.click(await screen.findByRole("button", { name: "Log arrival" }));
+}
+
 beforeEach(() => {
   resetState();
   localStorage.setItem("ontime.onboarded", "1");
@@ -33,9 +39,21 @@ describe("Today: arrivals", () => {
     expect(screen.getAllByRole("button", { name: /arrived now/ })).toHaveLength(3);
   });
 
-  it("one tap on Now records the arrival at the server's time", async () => {
+  it("the first tap on Now only opens the confirm card; nothing is saved until Log arrival", async () => {
     render(<TodayScreen />);
     await userEvent.click(screen.getByRole("button", { name: "Mark Raja arrived now" }));
+    const dialog = await screen.findByRole("dialog", { name: /Log arrival for Raja/ });
+    expect(within(dialog).getByText("Raja")).toBeTruthy();
+    expect(within(dialog).getByText("9:25")).toBeTruthy();
+    expect(state.saveRecord).not.toHaveBeenCalled();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Not me" }));
+    expect(state.saveRecord).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("the second tap (Log arrival) records the arrival at the server's time", async () => {
+    render(<TodayScreen />);
+    await tapNowThenLog("Raja");
     expect(state.saveRecord).toHaveBeenCalledWith({
       employeeId: "e1",
       record: { arrival: parseClock("9:25"), notice: null, leave: false },
@@ -46,8 +64,10 @@ describe("Today: arrivals", () => {
   it("uses the time at the moment of the tap, not when the screen last drew (9:30 vs 9:31 matters)", async () => {
     state.clock.minute = parseClock("9:30");
     render(<TodayScreen />);
-    state.clock.minute = parseClock("9:31"); // time passes with no re-render
     await userEvent.click(screen.getByRole("button", { name: "Mark Raja arrived now" }));
+    await screen.findByRole("dialog");
+    state.clock.minute = parseClock("9:31"); // time passes between the two taps, with no re-render
+    await userEvent.click(screen.getByRole("button", { name: "Log arrival" }));
     expect(state.saveRecord).toHaveBeenCalledWith({
       employeeId: "e1",
       record: { arrival: parseClock("9:31"), notice: null, leave: false },
@@ -80,7 +100,7 @@ describe("Today: arrivals", () => {
     state.records = { e1: { arrival: null, notice: parseClock("9:22"), leave: false } };
     state.clock.minute = parseClock("9:50");
     render(<TodayScreen />);
-    await userEvent.click(screen.getByRole("button", { name: "Mark Raja arrived now" }));
+    await tapNowThenLog("Raja");
     expect(state.saveRecord).toHaveBeenCalledWith({
       employeeId: "e1",
       record: { arrival: parseClock("9:50"), notice: parseClock("9:22"), leave: false },
@@ -90,7 +110,7 @@ describe("Today: arrivals", () => {
 
   it("Undo puts back what was there before", async () => {
     render(<TodayScreen />);
-    await userEvent.click(screen.getByRole("button", { name: "Mark Raja arrived now" }));
+    await tapNowThenLog("Raja");
     state.saveRecord.mockClear();
     await userEvent.click(await screen.findByRole("button", { name: "Undo" }));
     expect(state.saveRecord).toHaveBeenCalledWith({ employeeId: "e1", record: null });
@@ -126,7 +146,7 @@ describe("Today: arrivals", () => {
   it("shows the save error from the database and does not show Undo", async () => {
     state.saveRecord.mockRejectedValueOnce(new Error("That month is closed. Reopen it to make changes."));
     render(<TodayScreen />);
-    await userEvent.click(screen.getByRole("button", { name: "Mark Raja arrived now" }));
+    await tapNowThenLog("Raja");
     expect(await screen.findByText("That month is closed. Reopen it to make changes.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
   });

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Avatar } from "@/components/Avatar";
 import { formatMonth, monthStart, monthToParam, shiftMonth, type DateKey } from "@/lib/dates";
 import { formatPercent } from "@/scoring";
 import { MonthStatusCard } from "./MonthStatusCard";
@@ -14,6 +15,7 @@ export function ResultsScreen({ monthFirst }: { monthFirst: DateKey }) {
   const { loading, error, views, isClosed } = results;
   const month = monthToParam(monthFirst);
   const SCALE = bestPercent(results.values);
+  const photos = new Map(results.employees.map((e) => [e.id, e.photoUrl]));
   const notStarted = monthFirst > monthStart(results.today);
 
   return (
@@ -76,7 +78,10 @@ export function ResultsScreen({ monthFirst }: { monthFirst: DateKey }) {
                     <li key={v.id}>
                       <Link href={`/results/${month}/${v.id}`} className="block rounded-[18px] bg-linen px-4 py-3.5 ring-1 ring-ink/10 active:bg-sand/60">
                         <div className="flex items-baseline justify-between gap-3">
-                          <span className="min-w-0 truncate text-[17px] font-medium">{v.name}</span>
+                          <span className="flex min-w-0 items-center gap-3">
+                            <Avatar name={v.name} src={photos.get(v.id)} className="size-9 text-[13px]" />
+                            <span className="min-w-0 truncate text-[17px] font-medium">{v.name}</span>
+                          </span>
                           <span className="shrink-0 font-display text-[34px] leading-none font-light tracking-[-0.03em] tabular-nums">{formatPercent(tenths)}</span>
                         </div>
                         <div className="relative mt-3 h-2 rounded-full bg-sand" aria-hidden>

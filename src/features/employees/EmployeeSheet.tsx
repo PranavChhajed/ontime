@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useDeleteEmployee, useSaveEmployee } from "@/data/queries";
+import { useEffect, useRef, useState } from "react";
+import { Avatar } from "@/components/Avatar";
+import { useDeleteEmployee, useSaveEmployee, useSetEmployeePhoto } from "@/data/queries";
+import { resizeToSquareJpeg } from "@/lib/photo";
 import { WEEKDAY_SHORT } from "@/lib/dates";
 import { WEEK_ORDER, editableOffDays } from "./offs";
 import { Sheet } from "@/features/today/Sheet";
@@ -22,11 +24,34 @@ interface Props {
 export function EmployeeSheet({ employee, today, otherNames = [], otherEnrollmentNos = [], onClose, onError }: Props) {
   const save = useSaveEmployee();
   const del = useDeleteEmployee();
+  const setPhoto = useSetEmployeePhoto();
   const isNew = employee === null;
 
   const initialDays = isNew ? [0] : editableOffDays(employee);
   const [name, setName] = useState(employee?.name ?? "");
   const [enrollment, setEnrollment] = useState(employee?.enrollmentNo ?? "");
+  // Photo: nothing changes until Save, like every other field in this form.
+  const [photo, setPhotoState] = useState<{ kind: "keep" } | { kind: "new"; blob: Blob; preview: string } | { kind: "remove" }>({ kind: "keep" });
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  useEffect(() => () => {
+    if (photo.kind === "new") URL.revokeObjectURL(photo.preview);
+  }, [photo]);
+  const shownPhoto = photo.kind === "new" ? photo.preview : photo.kind === "remove" ? null : (employee?.photoUrl ?? null);
+  const hasPhoto = shownPhoto !== null;
+
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setPhotoError(null);
+    try {
+      const blob = await resizeToSquareJpeg(file);
+      setPhotoState({ kind: "new", blob, preview: URL.createObjectURL(blob) });
+    } catch (e) {
+      setPhotoError(e instanceof Error ? e.message : "Couldn’t use that photo. Please try another.");
+    }
+  }
+
   const [days, setDays] = useState<number[]>(initialDays);
   const [countedFrom, setCountedFrom] = useState(employee?.countedFrom ?? today);
   const [lastDay, setLastDay] = useState(employee?.lastWorkingDate ?? "");
@@ -35,14 +60,14 @@ export function EmployeeSheet({ employee, today, otherNames = [], otherEnrollmen
   const daysChanged = !isNew && [...days].sort().join() !== [...initialDays].sort().join();
   const enrollmentTaken = enrollment.trim() !== "" && otherEnrollmentNos.some((n) => n.trim().toLowerCase() === enrollment.trim().toLowerCase());
   const valid = name.trim().length > 0 && !enrollmentTaken && countedFrom !== "" && (lastDay === "" || lastDay >= countedFrom);
-  const busy = save.isPending || del.isPending;
+  const busy = save.isPending || del.isPending || setPhoto.isPending;
   const duplicate = name.trim() !== "" && otherNames.some((n) => n.trim().toLowerCase() === name.trim().toLowerCase());
 
   const toggle = (d: number) => setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]));
 
   async function submit(overrideLast?: string | null) {
     try {
-      await save.mutateAsync({
+      const id = await save.mutateAsync({
         id: employee?.id ?? null,
         name: name.trim(),
         ...(enrollment.trim() ? { enrollmentNo: enrollment.trim() } : {}),
@@ -51,6 +76,15 @@ export function EmployeeSheet({ employee, today, otherNames = [], otherEnrollmen
         weekdays: days,
         weeklyOffFrom: isNew ? countedFrom : offFrom,
       });
+      if (photo.kind !== "keep") {
+        try {
+          await setPhoto.mutateAsync({ employeeId: employee?.id ?? id, blob: photo.kind === "new" ? photo.blob : null, oldPath: employee?.photoPath ?? null });
+        } catch (e) {
+          onClose();
+          onError(`Saved, but the photo could not be uploaded. Open ${name.trim()} again to retry. ${e instanceof Error ? e.message : ""}`.trim());
+          return;
+        }
+      }
       onClose();
     } catch (e) {
       onError(e instanceof Error ? e.message : "Couldn’t save. Please try again.");
@@ -70,6 +104,29 @@ export function EmployeeSheet({ employee, today, otherNames = [], otherEnrollmen
   return (
     <Sheet label={isNew ? "Add employee" : `Edit ${employee.name}`} onClose={onClose}>
       <h2 className="min-w-0 font-display text-[32px] leading-none font-light tracking-[-0.03em]">{isNew ? "Add employee" : employee.name}</h2>
+
+      <div className="mt-5 flex items-center gap-4">
+        <Avatar name={name || "?"} src={shownPhoto} className="size-24 text-[32px]" />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <button type="button" onClick={() => cameraRef.current?.click()} className="h-12 rounded-[10px] border border-ink px-4 text-[16px] font-medium active:bg-sand">
+            {hasPhoto ? "Take a new photo" : "Take photo"}
+          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => galleryRef.current?.click()} className="h-11 flex-1 rounded-[10px] border border-ink/40 px-3 text-[14px] active:bg-sand">
+              Choose from gallery
+            </button>
+            {hasPhoto && (
+              <button type="button" onClick={() => setPhotoState({ kind: "remove" })} className="h-11 shrink-0 rounded-[10px] px-3 text-[14px] text-brick underline underline-offset-4">
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+        <input ref={cameraRef} type="file" accept="image/*" capture="user" hidden aria-label="Take a photo" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ""; }} />
+        <input ref={galleryRef} type="file" accept="image/*" hidden aria-label="Choose a photo from the gallery" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ""; }} />
+      </div>
+      {photoError && <p role="alert" className="mt-2 text-[13px] text-brick">{photoError}</p>}
+      {photo.kind !== "keep" && <p className="mt-2 text-[13px] text-ink/60">The photo is saved when you tap {isNew ? "Add" : "Save"}.</p>}
 
       <label htmlFor="emp-name" className="mt-5 block text-sm font-medium">
         Name

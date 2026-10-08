@@ -16,6 +16,9 @@ export interface Employee {
   lastWorkingDate: DateKey | null;
   /** Typed in by hand for now (a biometric device may fill it later). */
   enrollmentNo?: string | null;
+  /** Profile photo: storage path, and a short-lived link to show it. */
+  photoPath?: string | null;
+  photoUrl?: string | null;
   weeklyOffs: WeeklyOff[];
 }
 

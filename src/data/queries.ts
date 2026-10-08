@@ -52,6 +52,33 @@ export function useClock() {
 
 /* ───────────── employees ───────────── */
 
+const PHOTO_BUCKET = "employee-photos";
+const PHOTO_LINK_SECONDS = 3600;
+/** Signed photo links, reused until nearly expired so a picture never reloads or flickers. */
+const photoLinks = new Map<string, { url: string; until: number }>();
+
+async function signedPhotoUrls(paths: string[]): Promise<Map<string, string>> {
+  const now = Date.now();
+  const out = new Map<string, string>();
+  const missing: string[] = [];
+  for (const p of paths) {
+    const hit = photoLinks.get(p);
+    if (hit && hit.until - now > 10 * 60_000) out.set(p, hit.url);
+    else missing.push(p);
+  }
+  if (missing.length > 0) {
+    const res = await sb.storage.from(PHOTO_BUCKET).createSignedUrls(missing, PHOTO_LINK_SECONDS);
+    // A photo that cannot be shown must never stop the list loading: that person just shows initials.
+    for (const r of res.data ?? []) {
+      if (r.path && r.signedUrl) {
+        photoLinks.set(r.path, { url: r.signedUrl, until: now + PHOTO_LINK_SECONDS * 1000 });
+        out.set(r.path, r.signedUrl);
+      }
+    }
+  }
+  return out;
+}
+
 export function useEmployees() {
   return useQuery({
     queryKey: ["employees"],
@@ -62,8 +89,11 @@ export function useEmployees() {
       ]);
       const emps = must(e);
       const offs = must(w);
+      const urls = await signedPhotoUrls(emps.map((r) => r.photo_path).filter((p): p is string => !!p)).catch(() => new Map<string, string>());
       return emps.map((r) => ({
         id: r.id,
+        photoPath: r.photo_path ?? null,
+        photoUrl: r.photo_path ? (urls.get(r.photo_path) ?? null) : null,
         name: r.name,
         countedFrom: r.counted_from,
         lastWorkingDate: r.last_working_date,
@@ -103,6 +133,34 @@ export function useSaveEmployee() {
       return must(res) as unknown as string;
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+/** Set (a JPEG blob), or remove (null), one employee's photo. The old file is deleted afterwards. */
+export function useSetEmployeePhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { employeeId: string; blob: Blob | null; oldPath?: string | null }) => {
+      let path: string | null = null;
+      if (v.blob) {
+        path = `${v.employeeId}/${Date.now()}.jpg`;
+        const up = await sb.storage.from(PHOTO_BUCKET).upload(path, v.blob, { contentType: "image/jpeg", upsert: false });
+        if (up.error) fail(up.error);
+      }
+      const res = await sb.from("employees").update({ photo_path: path } as never).eq("id", v.employeeId);
+      if (res.error) {
+        if (path) await sb.storage.from(PHOTO_BUCKET).remove([path]);
+        fail(res.error);
+      }
+      if (v.oldPath && v.oldPath !== path) {
+        await sb.storage.from(PHOTO_BUCKET).remove([v.oldPath]); // best effort: an orphan file is harmless
+        photoLinks.delete(v.oldPath);
+      }
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["employees"] });
+      void qc.invalidateQueries({ queryKey: ["changeLog"] });
+    },
   });
 }
 

@@ -4,15 +4,18 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Avatar } from "@/components/Avatar";
 import { useClock, useDayRecords, useEmployees, useMonthCalendar, usePointValues, useSaveRecord } from "@/data/queries";
 import { addDays, formatDayHeading, formatYear, type DateKey } from "@/lib/dates";
 import { formatClock } from "@/scoring";
 import { KIND_STYLE } from "./category";
 import { resultFor } from "./calendar";
+import { buildRows } from "./buildRows";
+import { ConfirmArrival } from "./ConfirmArrival";
 import { EntrySheet } from "./EntrySheet";
 import { InformedList } from "./InformedList";
 import { NoticeSheet } from "./NoticeSheet";
-import { isNonWorking, type Row } from "./rows";
+import type { Row } from "./rows";
 import type { DayRecord, Employee } from "./types";
 
 const ONBOARDED_KEY = "ontime.onboarded";
@@ -43,6 +46,8 @@ export function TodayScreen() {
   const [view, setView] = useState<"arrivals" | "informed">("arrivals");
   const [openId, setOpenId] = useState<string | null>(null);
   const [noticeId, setNoticeId] = useState<string | null>(null);
+  /** The person whose "Now" was tapped; the arrival is only saved on the second tap. */
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [undo, setUndo] = useState<Undo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timers = useRef<{ undo?: ReturnType<typeof setTimeout>; error?: ReturnType<typeof setTimeout> }>({});
@@ -72,13 +77,7 @@ export function TodayScreen() {
 
   const rows: Row[] = useMemo(() => {
     if (!employees || !values || !dayRecords || !calendar) return [];
-    return employees
-      .map((emp) => {
-        const rec = dayRecords[emp.id];
-        const result = resultFor(emp, date, calendar.holidays, calendar.overrides, rec, values);
-        return { emp, rec, result, working: !isNonWorking(result.kind) };
-      })
-      .filter((r) => r.result.kind !== "not_employed");
+    return buildRows(employees, values, dayRecords, calendar, date);
   }, [employees, values, dayRecords, calendar, date]);
 
   const loading = !clock.ready || employeesQ.isPending || valuesQ.isPending || recordsQ.isPending || calQ.isPending;
@@ -114,6 +113,7 @@ export function TodayScreen() {
 
   function arriveNow(row: Row) {
     if (!values || !calendar) return;
+    setConfirmId(null);
     const rec: DayRecord = { arrival: getNow(), notice: row.rec?.notice ?? null, leave: false };
     const r = resultFor(row.emp, date, calendar.holidays, calendar.overrides, rec, values);
     void commit(row.emp, rec, `${row.emp.name}: ${r.explanation}`);
@@ -139,6 +139,7 @@ export function TodayScreen() {
   }
 
   const open = openId ? employees?.find((e) => e.id === openId) : null;
+  const confirmRow = confirmId ? rows.find((r) => r.emp.id === confirmId) : null;
   const noticeEmp = noticeId ? employees?.find((e) => e.id === noticeId) : null;
 
   return (
@@ -274,7 +275,10 @@ export function TodayScreen() {
                 if (!row.working) {
                   return (
                     <li key={emp.id} className="flex items-center justify-between rounded-[18px] bg-sand/45 px-4 py-3.5 text-ink/60">
-                      <span className="text-base">{emp.name}</span>
+                      <span className="flex min-w-0 items-center gap-3">
+                        <Avatar name={emp.name} src={emp.photoUrl} className="size-9 text-[13px] opacity-60" />
+                        <span className="truncate text-base">{emp.name}</span>
+                      </span>
                       <span className="text-sm">{style.label}</span>
                     </li>
                   );
@@ -285,7 +289,8 @@ export function TodayScreen() {
 
                 return (
                   <li key={emp.id} className="flex items-stretch gap-2 rounded-[18px] bg-linen ring-1 ring-ink/10">
-                    <button type="button" onClick={() => setOpenId(emp.id)} className="flex min-w-0 flex-1 items-center gap-3 rounded-[18px] px-4 py-3 text-left active:bg-sand/60">
+                    <button type="button" onClick={() => setOpenId(emp.id)} className="flex min-w-0 flex-1 items-center gap-3 rounded-[18px] px-3 py-3 text-left active:bg-sand/60">
+                      <Avatar name={emp.name} src={emp.photoUrl} className="size-12 text-[17px]" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[17px] font-medium">{emp.name}</div>
                         <div className="text-[13px] leading-snug text-ink/60">
@@ -313,7 +318,7 @@ export function TodayScreen() {
                     {unrecorded && isToday && (
                       <button
                         type="button"
-                        onClick={() => arriveNow(row)}
+                        onClick={() => setConfirmId(emp.id)}
                         aria-label={`Mark ${emp.name} arrived now`}
                         className="my-2 mr-2 w-24 shrink-0 rounded-[12px] bg-terracotta text-[17px] font-medium text-ink active:scale-[0.96]"
                       >
@@ -354,6 +359,21 @@ export function TodayScreen() {
           )}
         </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {confirmRow && values && calendar && (
+          <ConfirmArrival
+            key={"c" + confirmRow.emp.id + date}
+            employee={confirmRow.emp}
+            getNow={getNow}
+            preview={(minute) =>
+              resultFor(confirmRow.emp, date, calendar.holidays, calendar.overrides, { arrival: minute, notice: confirmRow.rec?.notice ?? null, leave: false }, values)
+            }
+            onConfirm={() => arriveNow(confirmRow)}
+            onCancel={() => setConfirmId(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {noticeEmp && values && (

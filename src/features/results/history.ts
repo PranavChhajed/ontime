@@ -119,6 +119,7 @@ export function describeEntry(c: ChangeRow, nameOf: (id: string | null) => strin
         if (c.new_value === null) return { ...base, group: "Employees", subject: c.old_value, text: "removed" };
         return { ...base, group: "Employees", subject: c.old_value, text: `renamed to ${c.new_value}` };
       }
+      if (c.field === "photo_path") return { ...base, group: "Employees", subject: person, text: c.old_value === null ? "photo added" : c.new_value === null ? "photo removed" : "photo changed" };
       return { ...base, group: "Employees", subject: person, text: pair(EMPLOYEE_FIELD[c.field] ?? c.field, c.old_value, c.new_value, shortDate) };
     }
     case "employee_weekly_offs": {
