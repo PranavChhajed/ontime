@@ -12,6 +12,14 @@ PranavChhajed/ontime). Not yet done: Supabase Site URL / Redirect URL (owner),
 the trial month beside Excel (owner). See `planning/C3_Implementation_Plan.md` C3.6 and
 `planning/Go_Live_Guide.md`.
 
+**Added after Checkpoint 4 (owner requests, live):** optional employee enrollment number
+(typed by hand; a biometric device may fill it later); optional employee photo (private
+Supabase Storage bucket `employee-photos`, resized in the browser, shown as an avatar in
+every list); logging an arrival is now **two taps** (Now, then Log arrival on a confirm card;
+the time is read at the second tap); **Gate mode** (`/gate`, PIN-locked photo grid for a shared
+phone or tablet; a screen lock, not security; never overwrites an existing arrival).
+Biometrics (Timewatch ATF-305) is not built; the route depends on what the device supports.
+
 **Commands:** `npm run dev` (http://localhost:3000) · `npm test` (scoring
 tests) · `npx tsc --noEmit` · `npx eslint src` · `npx next build`.
 
